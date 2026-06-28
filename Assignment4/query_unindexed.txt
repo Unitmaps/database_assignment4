@@ -1,0 +1,79 @@
+|QUERY PLAN                                                                                                                                                                                       |
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|Limit  (cost=55954.45..55955.48 rows=5 width=80) (actual time=954.443..1036.456 rows=5.00 loops=1)                                                                                               |
+|  Buffers: shared hit=14200, temp read=1352 written=4076                                                                                                                                         |
+|  ->  GroupAggregate  (cost=55954.45..207693.14 rows=731276 width=80) (actual time=954.441..1036.453 rows=5.00 loops=1)                                                                          |
+|        Group Key: s.amount, e.full_name, d.name                                                                                                                                                 |
+|        Buffers: shared hit=14200, temp read=1352 written=4076                                                                                                                                   |
+|        ->  Incremental Sort  (cost=55954.45..189411.24 rows=731276 width=52) (actual time=954.416..1036.386 rows=113.00 loops=1)                                                                |
+|              Sort Key: s.amount DESC, e.full_name, d.name                                                                                                                                       |
+|              Presorted Key: s.amount, e.full_name                                                                                                                                               |
+|              Full-sort Groups: 3  Sort Method: quicksort  Average Memory: 29kB  Peak Memory: 29kB                                                                                               |
+|              Buffers: shared hit=14200, temp read=1352 written=4076                                                                                                                             |
+|              ->  Nested Loop  (cost=55954.30..156503.82 rows=731276 width=52) (actual time=954.233..1036.245 rows=135.00 loops=1)                                                               |
+|                    Buffers: shared hit=14200, temp read=1352 written=4076                                                                                                                       |
+|                    ->  Nested Loop  (cost=55954.02..138096.36 rows=731276 width=36) (actual time=954.206..1036.100 rows=135.00 loops=1)                                                         |
+|                          Buffers: shared hit=14179, temp read=1352 written=4076                                                                                                                 |
+|                          ->  Gather Merge  (cost=55953.72..121287.69 rows=560968 width=44) (actual time=953.821..1035.583 rows=109.00 loops=1)                                                  |
+|                                Workers Planned: 2                                                                                                                                               |
+|                                Workers Launched: 2                                                                                                                                              |
+|                                Buffers: shared hit=14166, temp read=1352 written=4076                                                                                                           |
+|                                ->  Sort  (cost=54953.70..55538.04 rows=233737 width=44) (actual time=783.084..783.509 rows=562.00 loops=3)                                                      |
+|                                      Sort Key: s.amount DESC, e.full_name                                                                                                                       |
+|                                      Sort Method: external merge  Disk: 10416kB                                                                                                                 |
+|                                      Buffers: shared hit=14166, temp read=1352 written=4076                                                                                                     |
+|                                      Worker 0:  Sort Method: external merge  Disk: 11984kB                                                                                                      |
+|                                      Worker 1:  Sort Method: external merge  Disk: 10112kB                                                                                                      |
+|                                      ->  Hash Join  (cost=9602.82..26918.25 rows=233737 width=44) (actual time=194.552..497.644 rows=186174.67 loops=3)                                         |
+|                                            Hash Cond: (ep.employee_id = e.id)                                                                                                                   |
+|                                            Buffers: shared hit=14136                                                                                                                            |
+|                                            ->  Parallel Hash Join  (cost=8226.62..22719.42 rows=78540 width=16) (actual time=94.601..298.128 rows=62594.00 loops=3)                             |
+|                                                  Hash Cond: (ep.project_id = p.id)                                                                                                              |
+|                                                  Buffers: shared hit=13143                                                                                                                      |
+|                                                  ->  Parallel Seq Scan on employees_on_projects ep  (cost=0.00..13124.72 rows=521172 width=8) (actual time=0.020..56.201 rows=416937.33 loops=3)|
+|                                                        Buffers: shared hit=7913                                                                                                                 |
+|                                                  ->  Parallel Hash  (cost=7834.17..7834.17 rows=31396 width=12) (actual time=94.005..94.006 rows=25056.67 loops=3)                              |
+|                                                        Buckets: 131072  Batches: 1  Memory Usage: 4608kB                                                                                        |
+|                                                        Buffers: shared hit=5230                                                                                                                 |
+|                                                        ->  Parallel Seq Scan on projects p  (cost=0.00..7834.17 rows=31396 width=12) (actual time=0.035..77.898 rows=25056.67 loops=3)          |
+|                                                              Filter: ((status)::text = 'planning'::text)                                                                                        |
+|                                                              Rows Removed by Filter: 141610                                                                                                     |
+|                                                              Buffers: shared hit=5230                                                                                                           |
+|                                            ->  Hash  (cost=1004.21..1004.21 rows=29760 width=28) (actual time=99.641..99.643 rows=29689.00 loops=3)                                             |
+|                                                  Buckets: 32768  Batches: 1  Memory Usage: 2124kB                                                                                               |
+|                                                  Buffers: shared hit=993                                                                                                                        |
+|                                                  ->  Hash Join  (cost=339.29..1004.21 rows=29760 width=28) (actual time=23.650..65.809 rows=29689.00 loops=3)                                   |
+|                                                        Hash Cond: (s.employee_id = e.id)                                                                                                        |
+|                                                        Buffers: shared hit=993                                                                                                                  |
+|                                                        ->  Seq Scan on salaries s  (cost=0.00..573.00 rows=35000 width=10) (actual time=0.682..9.214 rows=35000.00 loops=3)                     |
+|                                                              Buffers: shared hit=669                                                                                                            |
+|                                                        ->  Hash  (cost=233.00..233.00 rows=8503 width=18) (actual time=22.295..22.296 rows=8503.00 loops=3)                                     |
+|                                                              Buckets: 16384  Batches: 1  Memory Usage: 564kB                                                                                    |
+|                                                              Buffers: shared hit=324                                                                                                            |
+|                                                              ->  Seq Scan on employees e  (cost=0.00..233.00 rows=8503 width=18) (actual time=0.791..13.312 rows=8503.00 loops=3)               |
+|                                                                    Filter: ((status)::text = 'active'::text)                                                                                    |
+|                                                                    Rows Removed by Filter: 1497                                                                                                 |
+|                                                                    Buffers: shared hit=324                                                                                                      |
+|                          ->  Memoize  (cost=0.30..0.34 rows=1 width=8) (actual time=0.004..0.004 rows=1.24 loops=109)                                                                           |
+|                                Cache Key: e.id                                                                                                                                                  |
+|                                Cache Mode: logical                                                                                                                                              |
+|                                Hits: 103  Misses: 6  Evictions: 0  Overflows: 0  Memory Usage: 1kB                                                                                              |
+|                                Buffers: shared hit=13                                                                                                                                           |
+|                                ->  Index Only Scan using employees_departments_pkey on employees_departments ed  (cost=0.29..0.33 rows=1 width=8) (actual time=0.013..0.013 rows=1.17 loops=6)  |
+|                                      Index Cond: (employee_id = e.id)                                                                                                                           |
+|                                      Heap Fetches: 0                                                                                                                                            |
+|                                      Index Searches: 6                                                                                                                                          |
+|                                      Buffers: shared hit=13                                                                                                                                     |
+|                    ->  Memoize  (cost=0.28..0.30 rows=1 width=24) (actual time=0.001..0.001 rows=1.00 loops=135)                                                                                |
+|                          Cache Key: ed.department_id                                                                                                                                            |
+|                          Cache Mode: logical                                                                                                                                                    |
+|                          Hits: 128  Misses: 7  Evictions: 0  Overflows: 0  Memory Usage: 1kB                                                                                                    |
+|                          Buffers: shared hit=21                                                                                                                                                 |
+|                          ->  Index Scan using departments_pkey on departments d  (cost=0.27..0.29 rows=1 width=24) (actual time=0.009..0.009 rows=1.00 loops=7)                                 |
+|                                Index Cond: (id = ed.department_id)                                                                                                                              |
+|                                Index Searches: 7                                                                                                                                                |
+|                                Buffers: shared hit=21                                                                                                                                           |
+|Planning:                                                                                                                                                                                        |
+|  Buffers: shared hit=425                                                                                                                                                                        |
+|Planning Time: 75.018 ms                                                                                                                                                                         |
+|Execution Time: 1052.027 ms                                                                                                                                                                      |
