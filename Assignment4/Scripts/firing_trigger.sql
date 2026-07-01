@@ -11,4 +11,4 @@ create trigger make_inactive
 before update on employees
 for each row
 when (old.fired_at is null and new.fired_at is not null)
-execute function update_employee_status();
+execute function update_status();
